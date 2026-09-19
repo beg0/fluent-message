@@ -8,18 +8,24 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-fluent-bundle = "0.15"
+fluent-bundle = "0.16"
 
 # The proc-macro half of the crate. Optional so that `default-features = false`
 # users can implement `FluentMessage` by hand.
 fluent-message-derive = { version = "0.1.0", path = "../fluent-message-derive", optional = true }
 
-[dev-dependencies]
-unic-langid = { version = "0.9", features=["unic-langid-macros"] }
+# Optional integrations. None of them are needed for the derive itself.
+fluent-templates = { version = "0.13", optional = true }
+unic-langid = { version = "0.9", optional = true }
 
 [features]
 default = ["derive"]
 derive = ["dep:fluent-message-derive"]
+# `Loader` integration (fluent-templates).
+templates = ["dep:fluent-templates", "dep:unic-langid"]
+
+[dev-dependencies]
+unic-langid = { version = "0.9", features = ["macros"] }
 
 [package.metadata.docs.rs]
 all-features = true

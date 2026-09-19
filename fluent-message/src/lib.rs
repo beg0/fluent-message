@@ -217,6 +217,47 @@ impl ToFluentValue for isize {
 }
 
 // ---------------------------------------------------------------------------
+// optional integrations
+// ---------------------------------------------------------------------------
+
+/// [`fluent_templates::Loader`] integration.
+#[cfg(feature = "templates")]
+#[cfg_attr(docsrs, doc(cfg(feature = "templates")))]
+pub mod templates {
+    use super::{FluentMessage, FluentMessageExt};
+    use fluent_templates::Loader;
+    use unic_langid::LanguageIdentifier;
+
+    /// Look a [`FluentMessage`] up in any `fluent-templates` loader.
+    pub trait LoaderMessageExt {
+        fn lookup_message<M>(&self, lang: &LanguageIdentifier, msg: &M) -> Option<String>
+        where
+            M: FluentMessage + ?Sized;
+    }
+
+    impl<L: Loader> LoaderMessageExt for L {
+        fn lookup_message<M>(&self, lang: &LanguageIdentifier, msg: &M) -> Option<String>
+        where
+            M: FluentMessage + ?Sized,
+        {
+            if msg.has_args() {
+                // `args()` already has exactly the shape `Loader` wants:
+                // &HashMap<Cow<'static, str>, FluentValue<'_>>
+                self.try_lookup_with_args(lang, msg.msg_id(), &msg.args())
+            } else {
+                self.try_lookup(lang, msg.msg_id())
+            }
+        }
+    }
+
+    // Keeps `FluentMessageExt` in scope for downstream users of this module.
+    #[allow(unused)]
+    fn _assert_ext_in_scope<M: FluentMessage>(m: &M) -> bool {
+        m.to_fluent_args().get("__probe").is_none()
+    }
+}
+
+// ---------------------------------------------------------------------------
 // unit tests for the runtime half
 // ---------------------------------------------------------------------------
 
