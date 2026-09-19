@@ -1,0 +1,10 @@
+# Cargo generated files
+debug/
+target/
+
+# Debug symbols from rustc on Windows
+*.pdb
+
+# Backup files
+*.bak
+**/*.rs.bk
