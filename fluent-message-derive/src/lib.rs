@@ -99,6 +99,8 @@ impl VariantOpts {
 struct FieldOpts {
     /// Override the Fluent argument name.
     name: Option<String>,
+    /// Do not pass this field to Fluent at all.
+    skip: bool,
     /// Use `ToString` instead of `ToFluentValue`.
     display: bool,
 }
@@ -110,10 +112,12 @@ impl FieldOpts {
             attr.parse_nested_meta(|meta| {
                 if meta.path.is_ident("name") {
                     out.name = Some(meta.value()?.parse::<LitStr>()?.value());
+                } else if meta.path.is_ident("skip") {
+                    out.skip = true;
                 } else if meta.path.is_ident("display") {
                     out.display = true;
                 } else {
-                    return Err(meta.error("unknown option, expected `name` or `display`"));
+                    return Err(meta.error("unknown option, expected `name`, `skip` or `display`"));
                 }
                 Ok(())
             })?;
@@ -229,6 +233,10 @@ fn variant_body(krate: &Path, variant: &Variant) -> Result<(TokenStream2, Vec<To
             for field in &fields.named {
                 let ident = field.ident.as_ref().expect("named field");
                 let opts = FieldOpts::parse(&field.attrs)?;
+                if opts.skip {
+                    pats.push(quote!(#ident: _));
+                    continue;
+                }
                 let key = opts
                     .name
                     .clone()
@@ -242,6 +250,10 @@ fn variant_body(krate: &Path, variant: &Variant) -> Result<(TokenStream2, Vec<To
             let mut pats = Vec::new();
             for (index, field) in fields.unnamed.iter().enumerate() {
                 let opts = FieldOpts::parse(&field.attrs)?;
+                if opts.skip {
+                    pats.push(quote!(_));
+                    continue;
+                }
                 let binding = format_ident!("__field{}", index);
                 // Fluent identifiers must start with a letter, so `0` is not
                 // usable as an argument name: default to `arg0`, `arg1`, ...

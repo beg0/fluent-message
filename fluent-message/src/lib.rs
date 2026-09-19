@@ -28,6 +28,7 @@
 //!
 //! On a field:
 //! * `#[fluent(name = "userName")]` - override the Fluent argument name.
+//! * `#[fluent(skip)]` - do not send this field to Fluent.
 //! * `#[fluent(display)]` - convert with [`ToString`] instead of [`ToFluentValue`].
 //!
 //! Defaults: the id is the kebab-cased variant name, named fields keep their

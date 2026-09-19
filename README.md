@@ -19,7 +19,7 @@ enum AppMsg {
     Greeting { name: String, #[fluent(name = "unreadCount")] count: u32 },
     Range(u8, u8),                                      // $arg0, $arg1
     #[fluent(id = "upgrade")]
-    Upgrade(#[fluent(name = "version", display)] Version), // Use .to_string() to convert to FluentValue
+    Upgrade(#[fluent(name = "version", display)] Version, #[fluent(skip)] &'static str),
     #[fluent(full_id = "legacy-message")]
     Legacy,                                             // ignores the prefix
 }

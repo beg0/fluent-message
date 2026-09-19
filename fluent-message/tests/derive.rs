@@ -38,9 +38,12 @@ enum AppMsg {
     /// Tuple fields become arg0, arg1, ...
     Range(u8, u8),
 
-    /// Mixed: renamed, and Display-converted fields.
+    /// Mixed: renamed, skipped, and Display-converted fields.
     #[fluent(id = "upgrade")]
-    Upgrade(#[fluent(name = "version", display)] Version),
+    Upgrade(
+        #[fluent(name = "version", display)] Version,
+        #[fluent(skip)] &'static str,
+    ),
 
     /// `None` must not blow up.
     Optional { value: Option<i32> },
@@ -164,11 +167,12 @@ fn tuple_fields_are_named_arg0_arg1() {
 }
 
 #[test]
-fn display_is_honoured() {
-    let msg = AppMsg::Upgrade(Version(2, 1));
+fn skipped_fields_are_not_sent_and_display_is_honoured() {
+    let msg = AppMsg::Upgrade(Version(2, 1), "internal detail");
     let args = msg.args();
     assert_eq!(args.len(), 1);
     assert_eq!(as_str(args.get("version").unwrap()), "2.1");
+    assert!(matches!(msg, AppMsg::Upgrade(_, "internal detail")));
 }
 
 #[test]
@@ -186,7 +190,7 @@ fn has_args_does_not_depend_on_building_the_map() {
     assert!(!AppMsg::Legacy.has_args());
     assert!(AppMsg::Range(0, 1).has_args());
     // A variant whose only field is skipped has no args.
-    assert!(AppMsg::Upgrade(Version(1, 0)).has_args());
+    assert!(AppMsg::Upgrade(Version(1, 0), "x").has_args());
 }
 
 #[test]
@@ -229,7 +233,7 @@ fn formats_tuple_and_display_variants() {
         "Pick a number between 1 and 10."
     );
     assert_eq!(
-        AppMsg::Upgrade(Version(2, 1))
+        AppMsg::Upgrade(Version(2, 1), "internal")
             .format_lossy(&bundle)
             .unwrap(),
         "Please upgrade to 2.1."
